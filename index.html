@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>ふるさとの人びと</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* 縦一列の「帖」：目次カード → 本文ページ、下に固定の再生バー */
+:root{
+  --bg:#eef0ea; --paper:#f8f9f5; --ink:#1f2a33; --sub:#5b6770; --line:#d3d8cf;
+  --ai:#24476b; --ai-soft:#dce5ee; --moss:#5d7444; --warn:#9a3b2c;
+  --mincho:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --gothic:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a1f; --paper:#1c242b; --ink:#e4e8e2; --sub:#9aa6ad; --line:#2e3a43;
+  --ai:#8fb3d9; --ai-soft:#25364a; --moss:#9fbb7f; --warn:#e08a78; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a1f; --paper:#1c242b; --ink:#e4e8e2; --sub:#9aa6ad; --line:#2e3a43;
+  --ai:#8fb3d9; --ai-soft:#25364a; --moss:#9fbb7f; --warn:#e08a78; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--gothic);font-size:16px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 140px}
+.wrap{max-width:640px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid var(--ai);outline-offset:2px}
+
+header.top{padding-block:16px 18px;display:grid;gap:10px}
+.cover{position:relative;margin:0 0 6px;border-radius:14px;overflow:hidden;max-width:100%;aspect-ratio:400/480;max-height:78vh;background:#3f6f98}
+.cover svg{display:block;width:100%;height:100%}
+.cover-title{position:absolute;top:7%;right:9%;margin:0;writing-mode:vertical-rl;font-family:var(--mincho);font-weight:700;font-size:clamp(34px,10vw,50px);letter-spacing:.18em;line-height:1;color:#fbf6ec;text-shadow:0 2px 12px rgba(20,30,50,.55)}
+.cover-sub{position:absolute;top:8%;right:calc(9% + clamp(34px,10vw,50px) + 14px);writing-mode:vertical-rl;font-size:13px;letter-spacing:.3em;color:#f2e6d2;text-shadow:0 1px 6px rgba(20,30,50,.6)}
+.cover-author{position:absolute;left:5%;bottom:4.5%;font-family:var(--mincho);font-size:clamp(15px,4.2vw,19px);letter-spacing:.2em;color:#fbf6ec;text-shadow:0 1px 8px rgba(10,20,20,.8)}
+.eyebrow{font-size:12px;letter-spacing:.2em;color:var(--moss);font-weight:700}
+h1{font-family:var(--mincho);font-size:32px;line-height:1.3;margin:0;text-wrap:balance}
+.lead{color:var(--sub);margin:0;font-size:15px}
+.stats{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+
+.list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.item{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;
+  background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 14px}
+.item .no{font-family:var(--mincho);font-size:22px;color:var(--ai);text-align:center;font-variant-numeric:tabular-nums}
+.item .t{font-family:var(--mincho);font-size:19px;font-weight:700;line-height:1.35;min-width:0}
+.item .meta{font-size:12.5px;color:var(--sub);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.chip{font-size:11.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.chip.on{background:var(--ai-soft);border-color:transparent;color:var(--ai);font-weight:700}
+.item.playing{border-color:var(--ai);box-shadow:inset 4px 0 0 var(--ai)}
+
+/* 本文 */
+.end-nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin:8px 0 24px;padding-top:18px;border-top:1px solid var(--line)}
+.end-nav .btn{flex:1 1 auto;justify-content:center}
+/* 本文ページの絵：最初は表紙と同じ大きさ、読み進めると上に小さく残る */
+.d-cover{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;border-radius:14px;overflow:hidden;background:var(--bg);box-shadow:0 6px 14px -10px rgba(0,0,0,.45)}
+.d-cover svg{display:block;width:100%;height:100%}
+
+.back{background:none;border:0;padding:16px 0 4px;color:var(--ai);font-weight:700;display:inline-flex;gap:6px;align-items:center}
+.reading{padding-block:8px 24px}
+.reading .season{font-size:13px;color:var(--moss);letter-spacing:.15em;font-weight:700}
+.reading h2{font-family:var(--mincho);font-size:30px;line-height:1.35;margin:4px 0 6px;text-wrap:balance}
+.reading .len{font-size:13px;color:var(--sub)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px}
+.btn{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:10px 14px;font-weight:700;font-size:15px;display:inline-flex;gap:8px;align-items:center;min-height:46px}
+.btn.primary{background:var(--ai);color:var(--paper);border-color:var(--ai)}
+.btn.danger{color:var(--warn)}
+.btn[disabled]{opacity:.45;cursor:default}
+.note{font-size:13px;color:var(--sub);margin:4px 0 0}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;margin-top:8px}
+.body{font-family:var(--mincho);font-size:var(--fs,19px);line-height:2.05;margin-top:22px;max-width:34em}
+.body p{margin:0 0 1.1em;text-indent:1em}
+.sizer{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--sub);margin-top:14px}
+.sizer button{border:1px solid var(--line);background:var(--paper);border-radius:8px;width:40px;height:36px;font-weight:700}
+
+/* 再生バー */
+.player{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--paper);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.player .in{max-width:640px;margin:0 auto;display:grid;gap:6px}
+.p-title{font-family:var(--mincho);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-row{display:flex;align-items:center;gap:8px}
+.p-row input[type=range]{flex:1;min-width:0;accent-color:var(--ai);height:28px}
+.time{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.ctrl{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.ic{background:none;border:0;width:40px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center}
+.ic svg{width:24px;height:24px;fill:currentColor}
+.ic.big{width:56px;height:56px;background:var(--ai);color:var(--paper)}
+.ic.big svg{width:28px;height:28px}
+.rate{border:1px solid var(--line);background:none;border-radius:8px;padding:6px 6px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:52px}
+.p-head{display:flex;align-items:center;gap:8px}
+.p-head .p-title{flex:1;min-width:0}
+.sleep{flex:none}
+.rate[aria-pressed="true"]{background:var(--ai-soft);color:var(--ai);border-color:transparent}
+.p-empty{font-size:13px;color:var(--sub)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.item{transition:border-color .2s}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <section id="home">
+    <header class="top">
+      <figure class="cover">
+        <svg viewBox="0 0 400 480" role="img" aria-label="朝の山村。坂道を自転車がのぼり、分校と家々、大きなけやき、山から炭焼きの煙">
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f6f98"/><stop offset=".55" stop-color="#8fb4c9"/><stop offset="1" stop-color="#e6ddc0"/></linearGradient>
+            <linearGradient id="smoke" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e9eef0" stop-opacity=".8"/><stop offset="1" stop-color="#e9eef0" stop-opacity="0"/></linearGradient>
+          </defs>
+          <rect width="400" height="480" fill="url(#sky)"/>
+          <circle cx="70" cy="190" r="22" fill="#fff4d6" opacity=".9"/>
+          <path d="M0 240 L70 196 L130 222 L200 176 L262 214 L330 188 L400 216 L400 290 L0 290Z" fill="#6f8f8a"/>
+          <path d="M0 262 Q80 222 150 244 T300 236 Q350 228 400 244 L400 320 L0 320Z" fill="#4f7356"/>
+          <path d="M98 238 C90 206 110 186 100 156 C94 136 104 116 98 96 L108 96 C114 116 104 136 110 156 C120 186 100 206 108 238Z" fill="url(#smoke)"/>
+          <path d="M92 240 q11 -10 22 0Z" fill="#3a3a34"/>
+          <path d="M0 300 Q120 270 240 286 T400 282 L400 480 L0 480Z" fill="#6f9a52"/>
+          <path d="M0 360 Q140 330 400 352 L400 480 L0 480Z" fill="#5d8645"/>
+          <path d="M150 480 C170 430 250 410 236 372 C226 344 268 324 300 300 L310 304 C282 328 246 350 254 374 C268 418 200 440 196 480Z" fill="#d8c49a"/>
+          <g transform="translate(250 262)">
+            <rect x="0" y="16" width="86" height="34" fill="#e9e1cd"/>
+            <path d="M-6 18 L43 -4 L92 18Z" fill="#5c5348"/>
+            <g fill="#8fb4c9"><rect x="8" y="24" width="14" height="12"/><rect x="28" y="24" width="14" height="12"/><rect x="48" y="24" width="14" height="12"/></g>
+            <rect x="68" y="30" width="12" height="20" fill="#5c4a36"/>
+            <rect x="40" y="-18" width="6" height="16" fill="#5c5348"/><path d="M36 -20 L50 -20 L43 -28Z" fill="#5c5348"/>
+          </g>
+          <g transform="translate(150 286)">
+            <rect x="0" y="14" width="56" height="26" fill="#e3d6bc"/><path d="M-6 16 L28 -6 L62 16Z" fill="#7a5d3c"/><rect x="8" y="22" width="10" height="9" fill="#f2c66a"/>
+          </g>
+          <g transform="translate(20 300)">
+            <rect x="0" y="12" width="48" height="24" fill="#e3d6bc"/><path d="M-5 14 L24 -6 L53 14Z" fill="#6d5234"/>
+          </g>
+          <g transform="translate(66 318)">
+            <path d="M18 92 L20 40" stroke="#4a3a28" stroke-width="7" stroke-linecap="round"/>
+            <path d="M20 52 L4 36 M20 48 L36 30" stroke="#4a3a28" stroke-width="3" stroke-linecap="round"/>
+            <g fill="#3f6b3a"><circle cx="20" cy="22" r="26"/><circle cx="-2" cy="34" r="17"/><circle cx="42" cy="32" r="18"/><circle cx="20" cy="4" r="16"/></g>
+          </g>
+          <g transform="translate(296 340)">
+            <rect x="0" y="22" width="5" height="22" fill="#3a3a34"/>
+            <rect x="-6" y="0" width="17" height="24" rx="8" fill="#c43c2c"/>
+            <rect x="-2" y="9" width="9" height="2" fill="#2a1c18"/>
+          </g>
+          <g transform="translate(206 402)" stroke="#2a2a26" stroke-width="2.4" fill="none" stroke-linecap="round">
+            <circle cx="0" cy="22" r="11"/><circle cx="34" cy="22" r="11"/>
+            <path d="M0 22 L14 6 L30 6 L34 22 M14 6 L18 22 L30 6 M12 2 L18 2 M28 6 L30 -2 L36 -2"/>
+            <rect x="-10" y="0" width="16" height="10" fill="#7a5d3c" stroke-width="1.6"/>
+          </g>
+        </svg>
+        <h1 class="cover-title">ふるさとの人びと</h1>
+        <div class="cover-sub">朗読集　全五話</div>
+        <figcaption class="cover-author">作　中島義健</figcaption>
+      </figure>
+      <p class="lead">炭焼き、郵便屋さん、分校の先生、峠の茶屋、鍛冶屋。村の暮らしを支えた人びとを、一人ずつ主人公にした朗読です。まず「はじめに」で五つの話を紹介します。題名をタップすると本文が開きます。</p>
+      <div class="stats" id="stats"></div>
+    </header>
+    <ul class="list" id="list"></ul>
+  </section>
+
+  <section id="detail" hidden>
+    <button class="back" id="back" type="button">‹ 目次にもどる</button>
+    <div class="d-cover" id="d-cover"></div>
+    <article class="reading">
+      <div class="season" id="d-season"></div>
+      <h2 id="d-title"></h2>
+      <div class="len" id="d-len"></div>
+      <div class="actions">
+        <button class="btn primary" id="d-play" type="button"></button>
+        <label class="btn" id="d-pick-wrap"><input id="d-pick" type="file" accept="audio/*,.mp3" hidden><span id="d-pick-label">MP3を入れる</span></label>
+        <button class="btn" id="d-tts" type="button" hidden>試し読み（合成音声）</button>
+        <button class="btn danger" id="d-del" type="button" hidden>音声を外す</button>
+      </div>
+      <div class="confirm" id="d-confirm" hidden>この端末から音声を外しますか？
+        <button class="btn danger" id="d-del-yes" type="button">外す</button>
+        <button class="btn" id="d-del-no" type="button">やめる</button></div>
+      <p class="note" id="d-note"></p>
+      <div class="sizer">文字の大きさ
+        <button type="button" id="fs-down" aria-label="文字を小さく">小</button>
+        <button type="button" id="fs-up" aria-label="文字を大きく">大</button></div>
+      <div class="body" id="d-body"></div>
+      <div class="end-nav">
+        <button class="btn" id="back2" type="button">‹ 目次にもどる</button>
+        <button class="btn" id="next2" type="button" hidden></button>
+      </div>
+    </article>
+  </section>
+</div>
+
+<div class="player" id="player">
+  <div class="in">
+    <div class="p-head">
+      <div class="p-title" id="p-title">再生する朗読を選んでください</div>
+      <button class="rate sleep" id="sleep" type="button" aria-label="おやすみタイマー">☾ タイマー</button>
+    </div>
+    <div class="p-row">
+      <input type="range" id="seek" min="0" max="100" value="0" step="0.1" aria-label="再生位置">
+      <span class="time" id="time">0:00 / 0:00</span>
+    </div>
+    <div class="ctrl">
+      <button class="rate" id="rate" type="button" aria-label="再生速度">1.0倍</button>
+      <button class="ic" id="prev" type="button" aria-label="前の朗読"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="ic" id="rew" type="button" aria-label="15秒もどる"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></button>
+      <button class="ic big" id="pp" type="button" aria-label="再生"><svg viewBox="0 0 24 24" id="pp-ic"><path d="M8 5v14l11-7z"/></svg></button>
+      <button class="ic" id="fwd" type="button" aria-label="15秒すすむ"><svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/></svg></button>
+      <button class="ic" id="next" type="button" aria-label="次の朗読"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      <button class="rate" id="cont" type="button" aria-label="続けて再生">連続</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+const WORKS=[
+{id:"r00",title:"はじめに",season:"この朗読帖について",intro:true,text:[
+"これから、「ふるさとの人びと」をお届けします。",
+"どの村にも、その村になくてはならない人がいました。毎朝同じ時刻に坂をのぼってくる人。山の奥で、だまって火を守りつづける人。子どもたちの名前を、ひとり残らず覚えている人。",
+"その人たちは、新聞にのるような大きな仕事をしたわけではありません。けれど、村の暮らしは、そうした人たちの毎日の働きに、しっかりと支えられていました。",
+"この朗読帖では、そんなふるさとの人びとを、一人ずつ主人公にしてお話しします。",
+"第一話「炭焼きの源さん」。山の奥で五十年、炭窯の煙を見つめてきた男の物語です。",
+"第二話「郵便配達の自転車」。手紙といっしょに、村じゅうに笑顔と知らせを運んだ郵便屋さん。",
+"第三話「分校の先生」。山の分校に赴任した、若い女の先生と十二人の子どもたち。",
+"第四話「峠の茶屋のおかみさん」。峠を越える旅人を、湯気の立つ甘酒でむかえたおかみさん。",
+"第五話「村の鍛冶屋」。朝の村にひびく、とんてんかんという槌の音。",
+"あなたのふるさとにも、きっとこんな人がいたことでしょう。その人の顔を思いうかべながら、どうぞお聞きください。"]},
+{id:"r01",title:"炭焼きの源さん",season:"山の人",text:[
+"村のいちばん奥、沢をさかのぼった山の中腹に、源さんの炭窯があった。源さんは、十五のときに父親から炭焼きを教わり、それから五十年、この山で炭を焼いてきた。",
+"源さんの朝は早い。まだ暗いうちに家を出て、ちょうちんをさげて山道をのぼる。窯に着くと、まず煙の色を見る。それが、源さんの一日のはじまりだった。",
+"炭焼きは、煙を見る仕事だ、と源さんはよく言っていた。窯に火を入れたばかりのころ、煙は白く、もうもうと立ちのぼる。それがやがて、うすい青色に変わり、最後には、ほとんど見えないほど澄んでくる。その澄みぐあいを見きわめて、窯の口をふさぐ。早すぎても、遅すぎても、いい炭にはならない。",
+"窯を焼いているあいだ、源さんは、山の斜面でならやくぬぎの木を切る。切った木は、窯に入る長さにそろえて、背負子で運ぶ。六十をすぎても、源さんの足どりは、若い者に負けなかった。",
+"昼になると、窯のそばの切り株に腰をおろして、弁当を広げる。麦飯に、たくあんと梅ぼし。源さんは、飯つぶをひとつ、近くの石の上に置く。すると、どこからか山がらが飛んできて、それをついばんでいく。「おまえも、ご苦労さん」。源さんは、鳥に話しかけるのが好きだった。",
+"焼きあがった炭は、きん、きんと、金物のような澄んだ音をたてる。源さんは、炭を二本手にとって、軽く打ちあわせる。その音を聞いて、満足そうにうなずくのだった。",
+"冬になると、源さんの炭は、村じゅうの家に配られた。こたつや火鉢の中で、炭は赤くおこり、長い夜のあいだ、家族をあたためた。子どもたちは、源さんの炭のおかげで、雪の夜もぐっすりと眠ることができた。",
+"やがて、村にもガスや石油ストーブが入ってきた。炭を買う家は、年ごとに少なくなっていった。それでも源さんは、山をおりなかった。炭を待っている家が、まだ何軒か残っていたからだ。",
+"「炭はな、木の命を、もう一度燃やすもんだ」。源さんは、そう言っていた。「だから、ひとかけらだって、むだにしちゃいけねえ」。",
+"源さんが最後に窯をふさいだのは、七十をすぎた秋のことだった。今、あの山の中腹には、くずれかけた窯の跡が、草に埋もれて残っている。けれど、風のない静かな朝には、あの澄んだ青い煙が、木々のあいだから、ゆらりと立ちのぼるような気がする。"]},
+{id:"r02",title:"郵便配達の自転車",season:"村の人",text:[
+"毎朝九時になると、正夫さんの自転車が、役場の前の坂をのぼってきた。大きな荷台に、ふくらんだ郵便かばんをくくりつけて、ぎい、ぎいと、ペダルの音をきしませながら。",
+"正夫さんは、この村でただ一人の郵便配達だった。村は広く、家々は山の斜面に点々と散らばっている。いちばん遠い集落まで行って帰ってくると、半日がかりだった。",
+"坂がきつくなると、正夫さんは自転車をおりて、押して歩いた。汗をぬぐいながら、それでも口笛を吹いていた。正夫さんの口笛が聞こえると、村の人たちは「ああ、郵便屋さんだ」と、家から顔を出した。",
+"正夫さんが運ぶのは、手紙だけではなかった。町に出た息子からの仕送り、遠い親せきの結婚の知らせ、受験した学校の合格通知。正夫さんの郵便かばんには、村の人たちの喜びも悲しみも、いっしょに入っていた。",
+"山の上の一軒家には、目の悪いおばあさんが一人で暮らしていた。東京に住む息子から手紙が届くと、正夫さんは、縁側に腰をおろして、ゆっくりと読んで聞かせた。「元気でやっています。孫も大きくなりました」。おばあさんは、目を閉じて、何度もうなずきながら聞いていた。",
+"読み終えると、おばあさんは、決まって干し柿や漬物を持たせてくれた。「重くなるから」と正夫さんが断っても、おばあさんは、かばんのすみに押しこんでしまうのだった。",
+"雨の日も、雪の日も、正夫さんは休まなかった。大雪で自転車が使えない日は、かんじきをはいて、歩いて配った。「待ってる人がいるからな」。それが、正夫さんの口ぐせだった。",
+"一度だけ、正夫さんが配達をためらった手紙があった。遠い町で事故にあった若者の、悲しい知らせだった。正夫さんは、その家の前で長いあいだ立ちつくし、それから、帽子をとって戸をたたいた。その日、正夫さんは、口笛を吹かずに帰った。",
+"三十年あまり勤めて、正夫さんは郵便配達をやめた。最後の日、村の人たちは、役場の前に集まって、拍手でむかえた。正夫さんは、照れくさそうに頭をかいて、いつもの坂を、ゆっくりとおりていった。",
+"今、あの坂は、村の人たちのあいだで「正夫さんの坂」と呼ばれている。朝の九時、坂の上に立つと、今でもどこからか、ぎい、ぎいというペダルの音と、口笛が聞こえてくるような気がする。"]},
+{id:"r03",title:"分校の先生",season:"村の人",text:[
+"その分校は、村の本校から山道を一時間ほどのぼった、小さな集落の中にあった。教室はひとつ。子どもは、一年生から六年生まで、あわせて十二人だった。",
+"春子先生がこの分校に赴任してきたのは、二十二の春だった。町で生まれ育った春子先生にとって、山の暮らしは、何もかもがはじめてだった。最初の晩、宿直室の窓から見えたのは、まっ暗な山と、こぼれるような星だけだった。春子先生は、布団の中で少しだけ泣いた。",
+"朝、春子先生が鐘を鳴らすと、子どもたちが、山の道からかけおりてくる。ひとつの教室で、六つの学年に、べつべつの授業をする。一年生がひらがなを書いているあいだに、六年生には分数を教え、そのあいだに、三年生の音読を聞く。春子先生は、教室の中を、くるくると動きまわった。",
+"昼になると、みんなで机をくっつけて、弁当を食べた。子どもたちの弁当には、山菜のおひたしや、川でとった魚の佃煮が入っていた。「先生、これ、食べてみて」と、子どもたちは、自分のおかずを分けてくれた。",
+"ある朝、春子先生が教室に入ると、教卓の上に、花がいっぱい置かれていた。かたくり、すみれ、山つつじ。子どもたちが、登校の途中で摘んできたのだった。「先生が、さびしくないように」。六年生の女の子が、小さな声で言った。春子先生は、胸がいっぱいになって、しばらく何も言えなかった。",
+"冬になると、雪が深く積もった。下校の時刻、春子先生は、いちばん小さな一年生の手をひいて、家まで送っていった。雪の道を、ほかの子どもたちが一列になってついてくる。だれかが歌いだすと、みんなが声をあわせた。白い息が、夕暮れの空に、ふわりふわりとのぼっていった。",
+"春子先生は、七年間、その分校で教えた。町の学校へ移ることが決まった日、子どもたちは、みんなで手づくりの文集をつくってくれた。表紙には、山と、分校と、春子先生の顔が、クレヨンで描かれていた。",
+"それから何十年もたって、分校は、子どもがいなくなって閉じられた。",
+"閉校の日、春子先生のもとに、一通の手紙が届いた。あのときの六年生の女の子からだった。「先生、わたしも今、小学校の先生をしています。先生のような先生になりたくて」。",
+"春子先生は、手紙を読み終えると、本棚から、あのクレヨンの文集を取りだした。表紙の山と分校は、少し色あせていたけれど、子どもたちの笑い声は、今もそこから聞こえてくるようだった。"]},
+{id:"r04",title:"峠の茶屋のおかみさん",season:"峠の人",text:[
+"村から町へ抜ける峠のてっぺんに、一軒の茶屋があった。かやぶき屋根の小さな店で、のれんには、うすれた字で「峠の茶屋」と染めぬかれていた。",
+"店を切り盛りしていたのは、おとめさんというおかみさんだった。おとめさんは、夫を早くに亡くしてから、一人でこの茶屋を守ってきた。",
+"おとめさんの朝は、まだ暗いうちにはじまる。かまどに火を入れ、湯をわかし、甘酒の鍋をかける。それから、裏の畑でつんだよもぎで、草だんごをつくる。夜明けとともに、最初の客が峠をのぼってくる。",
+"茶屋には、いろいろな人がやって来た。町へ野菜を売りに行く村の女たち。重い荷を背負った行商人。峠をこえて嫁いでいく花嫁の行列。みんな、ここでひと息ついて、おとめさんの甘酒で体をあたためた。",
+"おとめさんは、客の話を聞くのが上手だった。だれの家に赤ん坊が生まれたか、だれが町で働きはじめたか。峠を行き来する人たちの話が、おとめさんのところに集まってくる。「あの人に、よろしく伝えておくれ」。そんな言づてを、おとめさんは、いくつもあずかっていた。",
+"ある冬の夕方、吹雪の中を、一人の若い男が茶屋に転がりこんできた。道に迷い、手足はすっかり冷えきっていた。おとめさんは、男を囲炉裏のそばにすわらせ、熱い甘酒を飲ませた。その夜、男は茶屋に泊まった。",
+"翌朝、雪はうそのようにやんでいた。男は、何度も頭をさげて、峠をおりていった。それから毎年、春になると、おとめさんのもとに、町の菓子が一箱届くようになった。差出人は、あの吹雪の夜の男だった。",
+"やがて、峠の下にトンネルが通った。車は、峠をのぼらずに、まっすぐ町へ行けるようになった。茶屋に立ちよる人は、目に見えて少なくなっていった。",
+"それでも、おとめさんは、店をしめなかった。毎朝かまどに火を入れ、甘酒の鍋をかけた。「だれか、来るかもしれんからね」。日が暮れると、軒先のちょうちんに灯をともした。峠の上で、その小さな灯りは、ぽつんと光っていた。",
+"おとめさんが亡くなって、茶屋はなくなった。けれど、今でも峠の道を歩いて越える人は、てっぺんで足をとめる。そこには、おとめさんが植えた桜の木が一本、旅人を見守るように立っている。"]},
+{id:"r05",title:"村の鍛冶屋",season:"村の人",text:[
+"とんてんかん、とんてんかん。村の朝は、鍛冶屋の槌の音ではじまった。その音が聞こえると、村の人たちは、ああ、金次さんが仕事をはじめたな、と思った。",
+"金次さんの鍛冶場は、村の真ん中の、大きなけやきの木の下にあった。土間には、炉とふいごと金床が置かれ、壁には、鎌や鍬や包丁が、ずらりとかけられていた。",
+"金次さんは、まず炉に炭を入れて、ふいごで風を送る。ごう、ごうと音がして、炭がまっ赤におこる。その中に鉄を入れ、赤く焼けたところで、金床の上に取りだす。金次さんが槌をふりおろすたびに、火花がぱっと飛びちった。",
+"学校の帰り道、子どもたちは、よく鍛冶場の入り口にしゃがみこんで、その火花をながめていた。「あぶないから、それより前に来るなよ」。金次さんは、ぶっきらぼうにそう言いながら、ときどき、子どもたちのほうをちらりと見て、わざと大きな火花を飛ばしてみせた。",
+"春が近づくと、鍛冶場はいちばんいそがしくなった。田起こしの前に、村じゅうの鍬が持ちこまれるのだ。すりへった鍬の先に、新しい鉄を打ちつけて、もとの形にもどす。金次さんは、夜おそくまで、槌をふりつづけた。",
+"ある日、小さな女の子が、こわれた鎌を両手にかかえてやって来た。「おじいちゃんの鎌。おじいちゃん、死んじゃったけど、お父さんが使うから」。刃は欠け、柄はぐらぐらになっていた。金次さんは、だまって鎌を受けとった。",
+"その鎌を、金次さんは三日かけて直した。刃を打ちなおし、ていねいに研ぎ、柄も新しくした。けれど、もとの柄に彫られていた、おじいさんの名前だけは、新しい柄にそのまま彫りうつした。女の子は、鎌を受けとると、大事そうに胸にかかえて帰っていった。",
+"金次さんには、息子が一人いた。息子は、町の工場に勤めに出た。鍛冶屋を継ぐ者はいなかった。「それでいい。鉄の仕事は、どこにいてもできる」。金次さんは、そう言って笑った。",
+"金次さんは、八十近くまで、槌をふりつづけた。鍛冶場がしまった今、あのけやきの木の下は、静かになった。",
+"それでも、村の家々には、金次さんが打った鎌や鍬が、今も残っている。手にとると、ずしりと重い。その重さの中に、とんてんかん、とんてんかんという、あの朝の音がしみこんでいるような気がする。"]}
+];
+
+const $=id=>document.getElementById(id);
+const audio=$("audio");
+const state={cur:null,view:null,urls:{},src:{},rate:1,cont:true,fs:19};
+const RATES=[0.8,1,1.25];
+try{const s=JSON.parse(localStorage.getItem("hitobito-prefs")||"{}");Object.assign(state,{rate:s.rate||1,cont:s.cont!==false,fs:s.fs||19});}catch(e){}
+function savePrefs(){try{localStorage.setItem("hitobito-prefs",JSON.stringify({rate:state.rate,cont:state.cont,fs:state.fs}))}catch(e){}}
+
+/* --- この端末への保存（IndexedDB） --- */
+let dbp=null;
+function idb(){if(dbp)return dbp;dbp=new Promise((res,rej)=>{try{const r=indexedDB.open("hitobito-roudoku",1);r.onupgradeneeded=()=>r.result.createObjectStore("audio");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e)}});return dbp;}
+async function idbOp(mode,fn){const d=await idb();return new Promise((res,rej)=>{const tx=d.transaction("audio",mode);const st=tx.objectStore("audio");const rq=fn(st);tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=()=>rej(tx.error);});}
+const idbGet=k=>idbOp("readonly",s=>s.get(k));
+const idbPut=(k,v)=>idbOp("readwrite",s=>s.put(v,k));
+const idbDel=k=>idbOp("readwrite",s=>s.delete(k));
+
+/* 音声の有無を調べる：ページに公開された audio/rNN.mp3 を優先、なければ端末内 */
+/* ページに組みこんだ音声とその長さ（秒） */
+const PAGE_AUDIO={};
+const ORIG={r00:"0_hajimeni",r01:"1_sumiyakino_gensan",r02:"2_yuubinhaitatuno_jitensya",r03:"3_bunkouno_sensei",r04:"4_tougeno_tyayano_okamisan",r05:"5_murano_kajiya"};
+async function probe(w){
+  /* GitHubに置いたMP3を、いくつかの名前・場所の候補から探す */
+  const names=[w.id+".mp3",ORIG[w.id]+".mp3",ORIG[w.id].replace(/^(\d+)\./,"$1_")+".mp3",ORIG[w.id].replace(/^(\d+)_/,"$1.")+".mp3"];
+  const cands=[];names.forEach(f=>{cands.push(f,"audio/"+f)});
+  for(const u of [...new Set(cands)]){
+    try{const r=await fetch(encodeURI(u),{method:"HEAD",cache:"no-store"});if(r.ok){state.urls[w.id]=encodeURI(u);state.src[w.id]="page";return;}}catch(e){}
+  }
+  try{const b=await idbGet(w.id);if(b){state.urls[w.id]=URL.createObjectURL(b);state.src[w.id]="device";}}catch(e){}
+}
+
+function minutes(w){const n=w.text.join("").length;return Math.max(1,Math.round(n/310));}
+function fmt(t){if(!isFinite(t))return"0:00";t=Math.floor(t);return Math.floor(t/60)+":"+String(t%60).padStart(2,"0");}
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600);}
+const KAN=["一","二","三","四","五","六","七","八","九","十","十一","十二","十三","十四","十五"];
+
+function renderList(){
+  const ul=$("list");ul.textContent="";
+  WORKS.forEach((w,i)=>{
+    const li=document.createElement("li");
+    const b=document.createElement("button");b.type="button";b.className="item"+(state.cur===w.id&&!audio.paused?" playing":"");
+    b.innerHTML='<span class="no"></span><span style="min-width:0"><span class="t"></span><span class="meta"><span class="s"></span><span class="m"></span></span></span><span class="chip"></span>';
+    b.querySelector(".no").textContent=w.intro?"序":KAN[WORKS[0].intro?i-1:i];
+    b.querySelector(".t").textContent=w.title;
+    b.querySelector(".s").textContent=w.season;
+    b.querySelector(".m").textContent=PAGE_AUDIO[w.id]?fmt(PAGE_AUDIO[w.id]):"約"+minutes(w)+"分";
+    const c=b.querySelector(".chip");const has=!!state.urls[w.id];c.textContent=has?"音声あり":"音声なし";if(has)c.classList.add("on");
+    b.onclick=()=>{location.hash=w.id};
+    li.appendChild(b);ul.appendChild(li);
+  });
+  const n=WORKS.filter(w=>state.urls[w.id]).length;
+  $("stats").textContent="音声が入っている朗読　"+n+" / "+WORKS.length+" 本";
+}
+
+function renderDetail(){
+  const w=WORKS.find(x=>x.id===state.view);if(!w)return;
+  $("d-season").textContent=w.intro?"上下にスライドすると朗読の文字が出ます。":w.season;
+  $("d-title").textContent=w.title;
+  $("d-len").textContent="本文 約"+w.text.join("").length+"字・朗読 "+(PAGE_AUDIO[w.id]?fmt(PAGE_AUDIO[w.id]):"約"+minutes(w)+"分");
+  const body=$("d-body");body.textContent="";w.text.forEach(p=>{const e=document.createElement("p");e.textContent=p;body.appendChild(e)});
+  const has=!!state.urls[w.id];
+  const playing=state.cur===w.id&&!audio.paused;
+  $("d-play").textContent=has?(playing?"一時停止":"この朗読を聞く"):"音声はまだありません";
+  $("d-play").disabled=!has;
+  $("d-pick-wrap").hidden=state.src[w.id]==="page";
+  $("d-pick-label").textContent=has?"MP3を入れかえる":"MP3を入れる";
+  $("d-del").hidden=state.src[w.id]!=="device";
+  $("d-confirm").hidden=true;
+  $("d-note").textContent=state.src[w.id]==="page"?"この音声はページに組みこまれています。だれが開いても聞けます。"
+    :has?"この音声はこの端末だけに保存されています。"
+    :"スマートフォンに入っているMP3を選ぶと、この端末で聞けるようになります。";
+  document.documentElement.style.setProperty("--fs",state.fs+"px");
+  {const i=WORKS.findIndex(x=>x.id===state.view),nx=WORKS[i+1];$("next2").hidden=!nx;if(nx)$("next2").textContent=(nx.intro?"":"次へ　")+nx.title+" ›";}
+}
+
+function route(){
+  const id=location.hash.slice(1);const w=WORKS.find(x=>x.id===id);
+  if(w){state.view=id;$("home").hidden=true;$("detail").hidden=false;renderDetail();window.scrollTo(0,0);buildDetailCover();sizeDetailCover();}
+  else{state.view=null;$("home").hidden=false;$("detail").hidden=true;renderList();}
+}
+
+/* --- 再生 --- */
+function load(id,autoplay){
+  const w=WORKS.find(x=>x.id===id);if(!w||!state.urls[id])return false;
+  stopTts();
+  if(state.cur!==id){state.cur=id;audio.src=state.urls[id];}
+  audio.playbackRate=state.rate;
+  $("p-title").textContent=w.title;
+  if(autoplay)audio.play().catch(()=>toast("再生できませんでした。もう一度押してください"));
+  return true;
+}
+function step(dir){
+  if(!state.cur){const f=WORKS.find(w=>state.urls[w.id]);if(f)load(f.id,true);else toast("音声が入っている朗読がありません");return;}
+  let i=WORKS.findIndex(w=>w.id===state.cur);
+  for(let k=0;k<WORKS.length;k++){i+=dir;if(i<0||i>=WORKS.length)break;if(state.urls[WORKS[i].id]){load(WORKS[i].id,true);if(state.view)location.hash=WORKS[i].id;return;}}
+  toast(dir>0?"これが最後の朗読です":"これが最初の朗読です");
+}
+const PLAY='<path d="M8 5v14l11-7z"/>',PAUSE='<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+function sync(){
+  $("pp-ic").innerHTML=audio.paused?PLAY:PAUSE;$("pp").setAttribute("aria-label",audio.paused?"再生":"一時停止");
+  if(state.view)renderDetail();else renderList();
+}
+audio.addEventListener("play",sync);audio.addEventListener("pause",sync);
+audio.addEventListener("timeupdate",()=>{const d=audio.duration||0;if(!seeking)$("seek").value=d?audio.currentTime/d*100:0;$("time").textContent=fmt(audio.currentTime)+" / "+fmt(d);});
+audio.addEventListener("loadedmetadata",()=>{$("time").textContent="0:00 / "+fmt(audio.duration)});
+audio.addEventListener("ended",()=>{
+  if(SLEEP[sleepIdx]===-1){resetSleep();toast("おやすみなさい");sync();return;}
+  if(state.cont)step(1);else sync();});
+
+/* --- おやすみタイマー --- */
+const SLEEP=[0,15,20,30,-1];   // 分。-1は「この朗読が終わったら」
+let sleepIdx=0,deadline=null,fading=null;
+function resetSleep(){sleepIdx=0;deadline=null;showSleep();}
+function showSleep(){
+  const b=$("sleep"),m=SLEEP[sleepIdx];
+  b.setAttribute("aria-pressed",m!==0);
+  if(m===0)b.textContent="☾ タイマー";
+  else if(m===-1)b.textContent="☾ この篇まで";
+  else{const r=Math.max(0,deadline-Date.now())/1000;b.textContent="☾ 残り"+fmt(r);}
+}
+function checkSleep(){
+  if(!deadline||fading)return;
+  if(Date.now()>=deadline){
+    if(audio.paused){resetSleep();return;}
+    let v=1;fading=setInterval(()=>{           // 約10秒かけて小さくしてから止める
+      v-=0.05;try{audio.volume=Math.max(0,v)}catch(e){}
+      if(v<=0){clearInterval(fading);fading=null;audio.pause();try{audio.volume=1}catch(e){}resetSleep();toast("おやすみなさい");}
+    },500);
+  }
+}
+$("sleep").onclick=()=>{
+  if(fading){clearInterval(fading);fading=null;try{audio.volume=1}catch(e){}}
+  sleepIdx=(sleepIdx+1)%SLEEP.length;const m=SLEEP[sleepIdx];
+  deadline=m>0?Date.now()+m*60000:null;showSleep();
+  toast(m===0?"タイマーを切りました":m===-1?"いまの朗読が終わったら止めます":m+"分後にゆっくり止めます");
+};
+audio.addEventListener("timeupdate",checkSleep);
+setInterval(()=>{if(deadline)showSleep();checkSleep();},1000);
+let seeking=false;
+$("seek").addEventListener("input",()=>{seeking=true;const d=audio.duration||0;$("time").textContent=fmt($("seek").value/100*d)+" / "+fmt(d);});
+$("seek").addEventListener("change",()=>{const d=audio.duration||0;if(d)audio.currentTime=$("seek").value/100*d;seeking=false;});
+$("pp").onclick=()=>{if(!state.cur){step(1);return;}audio.paused?audio.play().catch(()=>{}):audio.pause();};
+$("rew").onclick=()=>{audio.currentTime=Math.max(0,audio.currentTime-15)};
+$("fwd").onclick=()=>{if(audio.duration)audio.currentTime=Math.min(audio.duration-0.5,audio.currentTime+15)};
+$("prev").onclick=()=>step(-1);$("next").onclick=()=>step(1);
+function showRate(){$("rate").textContent=state.rate.toFixed(state.rate===1.25?2:1)+"倍";$("cont").textContent="連続";$("cont").setAttribute("aria-pressed",state.cont);}
+$("rate").onclick=()=>{state.rate=RATES[(RATES.indexOf(state.rate)+1)%RATES.length];audio.playbackRate=state.rate;showRate();savePrefs();};
+$("cont").onclick=()=>{state.cont=!state.cont;showRate();savePrefs();toast(state.cont?"終わったら次の朗読へ進みます":"一篇ずつ止まります");};
+
+/* --- 詳細画面の操作 --- */
+$("back").onclick=()=>{location.hash="";};
+$("back2").onclick=()=>{location.hash="";};
+$("next2").onclick=()=>{const i=WORKS.findIndex(x=>x.id===state.view);if(WORKS[i+1])location.hash=WORKS[i+1].id;};
+$("d-play").onclick=()=>{const id=state.view;if(state.cur===id&&!audio.paused){audio.pause();return;}load(id,true);};
+$("d-pick").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;const id=state.view;
+  if(!/audio|mpeg/.test(f.type)&&!/\.mp3$/i.test(f.name)){toast("音声ファイル（MP3）を選んでください");return;}
+  try{await idbPut(id,f);}catch(err){toast("この端末には保存できませんでした。このまま一時的に再生できます");}
+  if(state.urls[id]&&state.src[id]==="device")URL.revokeObjectURL(state.urls[id]);
+  state.urls[id]=URL.createObjectURL(f);state.src[id]="device";
+  if(state.cur===id){state.cur=null;}
+  renderDetail();toast("「"+WORKS.find(w=>w.id===id).title+"」に音声を入れました");
+});
+$("d-del").onclick=()=>{$("d-confirm").hidden=false;};
+$("d-del-no").onclick=()=>{$("d-confirm").hidden=true;};
+$("d-del-yes").onclick=async()=>{
+  const id=state.view;try{await idbDel(id)}catch(e){}
+  if(state.cur===id){audio.pause();audio.removeAttribute("src");state.cur=null;$("p-title").textContent="再生する朗読を選んでください";}
+  URL.revokeObjectURL(state.urls[id]);delete state.urls[id];delete state.src[id];renderDetail();toast("音声を外しました");
+};
+$("fs-up").onclick=()=>{state.fs=Math.min(26,state.fs+2);renderDetail();savePrefs();};
+$("fs-down").onclick=()=>{state.fs=Math.max(15,state.fs-2);renderDetail();savePrefs();};
+
+/* --- 合成音声の試し読み（使える環境でのみ表示） --- */
+let tts=null,ttsOn=false;
+function stopTts(){if(tts&&ttsOn){try{tts.stop()}catch(e){}}}
+(async()=>{try{tts=window.claude?.use?await window.claude.use("tts"):null;}catch(e){tts=null}
+  if(!tts)return;$("d-tts").hidden=false;
+  tts.onState(({state:s})=>{ttsOn=s==="speaking"||s==="paused";$("d-tts").textContent=ttsOn?"試し読みを止める":"試し読み（合成音声）";});
+})();
+$("d-tts").onclick=()=>{
+  if(!tts)return;if(ttsOn){tts.stop();return;}
+  audio.pause();const w=WORKS.find(x=>x.id===state.view);
+  tts.speak([{text:w.title,language:"ja",rate:0.9},...w.text.map(p=>({text:p,language:"ja",rate:0.9}))]).catch(e=>{if(e&&e.code==="not_granted"){$("d-tts").hidden=true;}});
+};
+
+
+/* --- 本文ページの絵 --- */
+let dcFull=0;
+function buildDetailCover(){
+  const box=$("d-cover");if(box.firstChild)return;
+  const src=document.querySelector(".cover svg");if(!src)return;
+  let html=src.outerHTML.replace(/id="([^"]+)"/g,'id="d-$1"').replace(/url\(#([^)]+)\)/g,"url(#d-$1)");
+  box.innerHTML=html;
+  const svg=box.querySelector("svg");svg.setAttribute("preserveAspectRatio","xMidYMid slice");svg.removeAttribute("aria-label");svg.setAttribute("aria-hidden","true");
+}
+function sizeDetailCover(){
+  if($("detail").hidden)return;
+  const box=$("d-cover"),w=box.parentElement.clientWidth;
+  dcFull=Math.min(w*480/400,window.innerHeight*0.78);
+  const min=Math.min(dcFull,w*0.61);   // スライドしたときに残す絵の高さ（横幅の約6割）
+  const start=$("back").offsetTop+$("back").offsetHeight;   // 絵の本来の位置（貼りついても変わらない基準）
+  const h=Math.max(min,dcFull-Math.max(0,window.scrollY-start));
+  box.style.height=h+"px";box.style.marginBottom=(dcFull-h)+"px";
+}
+window.addEventListener("scroll",()=>requestAnimationFrame(sizeDetailCover),{passive:true});
+window.addEventListener("resize",sizeDetailCover);
+window.addEventListener("hashchange",route);
+showRate();route();
+Promise.all(WORKS.map(probe)).then(route);
+</script>
+
+</body>
+</html>
